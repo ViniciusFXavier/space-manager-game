@@ -42,7 +42,8 @@ export const EntityManager = {
             velocity: 10,
             faction,
             mesh: shipMesh,
-            gridPosition: { x: gridX, y: gridY }
+            gridPosition: { x: gridX, y: gridY },
+            isMoving: false
         };
 
         // Add to scene and entity list
@@ -89,9 +90,50 @@ export const EntityManager = {
         return station;
     },
 
+    // Check if a position is currently occupied
+    isPositionOccupied: function(gridX, gridY) {
+        return this.entities.some(entity => 
+            entity.gridPosition.x === gridX && 
+            entity.gridPosition.y === gridY
+        );
+    },
+
+    // Find a free position near the given coordinates
+    findFreePositionNear: function(gridX, gridY, maxRadius = 5) {
+        // Check the original position first
+        if (!this.isPositionOccupied(gridX, gridY)) {
+            return { x: gridX, y: gridY };
+        }
+        
+        // Spiral out to find a free position
+        for (let r = 1; r <= maxRadius; r++) {
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    // Only check the perimeter of the current radius
+                    if (Math.abs(dx) === r || Math.abs(dy) === r) {
+                        const x = gridX + dx;
+                        const y = gridY + dy;
+                        
+                        if (!this.isPositionOccupied(x, y)) {
+                            return { x, y };
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If no free position found, return a position outside the search radius
+        return { x: gridX + maxRadius + 1, y: gridY + maxRadius + 1 };
+    },
+
     // Move a ship to a new grid position with animation
     moveShipTo: function (ship, targetGridX, targetGridY) {
         if (!ship || ship.type !== 'ship') return;
+        
+        // Check if target position is occupied, find free position if needed
+        const freePos = this.findFreePositionNear(targetGridX, targetGridY);
+        targetGridX = freePos.x;
+        targetGridY = freePos.y;
 
         const startPos = {
             x: ship.mesh.position.x,
@@ -108,34 +150,29 @@ export const EntityManager = {
 
         // Use a fixed velocity instead of fixed duration
         const duration = (distance / ship.velocity) * 1000; // convert to milliseconds
+        
+        // Calculate rotation angle now for smooth rotation
+        const angle = Math.atan2(endPos.z - startPos.z, endPos.x - startPos.x);
+        
+        // Mark ship as moving
+        ship.isMoving = true;
 
         // Create a tween for the animation
         const tween = new TWEEN.Tween(startPos)
             .to(endPos, duration)
             .onUpdate(function () {
-                // Calculate the current position
-                ship.mesh.position.set(startPos.x, 0, startPos.z);
-
+                // Update position
+                ship.mesh.position.set(startPos.x, startPos.y, startPos.z);
+                
                 // Rotate ship to face direction of movement
-                if (startPos.x !== endPos.x || startPos.z !== endPos.z) {
-                    const angle = Math.atan2(endPos.z - startPos.z, endPos.x - startPos.x);
-                    ship.mesh.rotation.y = angle - Math.PI / 2;
-                }
+                // Subtract PI/2 to make the ship face the direction it's moving
+                ship.mesh.rotation.y = angle - Math.PI / 2;
             })
             .onComplete(function () {
                 // Update the ship's grid position
                 ship.gridPosition = { x: targetGridX, y: targetGridY };
-            })
-            .start();
-
-        // Add a property to track progress for the onUpdate function
-        tween._valuesEnd.progress = 0;
-
-        // Create a tween for the progress tracking
-        const progressTween = new TWEEN.Tween({ progress: 0 })
-            .to({ progress: 1 }, duration)
-            .onUpdate(function () {
-                tween._valuesEnd.progress = this.progress;
+                // Mark ship as no longer moving
+                ship.isMoving = false;
             })
             .start();
     },

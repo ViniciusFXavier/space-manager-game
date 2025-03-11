@@ -2,10 +2,10 @@
 
 export const FactionManager = {
     factions: [
-        { id: 'player', name: 'Player Faction', color: 0x3498db },
-        { id: 'alpha', name: 'Alpha Federation', color: 0xe74c3c },
-        { id: 'beta', name: 'Beta Coalition', color: 0x2ecc71 },
-        { id: 'gamma', name: 'Gamma Empire', color: 0xf39c12 }
+        { id: 'player', name: 'Player Faction', color: 0x3498db, factionAi: false },
+        { id: 'alpha', name: 'Alpha Federation', color: 0xe74c3c, factionAi: true },
+        { id: 'beta', name: 'Beta Coalition', color: 0x2ecc71, factionAi: true },
+        { id: 'gamma', name: 'Gamma Empire', color: 0xf39c12, factionAi: true }
     ],
 
     playerFaction: null,

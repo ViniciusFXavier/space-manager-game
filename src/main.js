@@ -1,14 +1,15 @@
 import './style.css'
-// Main game initialization and loop
 
 // Import dependencies
 import { CONFIG } from './config.js';
 import { GridManager } from './grid.js';
 import { FactionManager } from './factions.js';
+import { FactionAI } from './faction-ai.js';
 import { EntityManager } from './entities.js';
 import { CameraControls } from './camera-controls.js';
 import { ContextMenu } from './context-menu.js';
 
+// Main game initialization and loop
 // Global variables
 let scene, camera, renderer;
 let grid;
@@ -34,7 +35,11 @@ function init() {
         CONFIG.camera.initialPosition.z
     );
 
-    camera.lookAt(new THREE.Vector3(camera.position.x, 0, camera.position.z));
+    camera.lookAt(new THREE.Vector3(
+        camera.position.x,
+        0,
+        camera.position.z
+    ));
 
     // Create renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -50,6 +55,9 @@ function init() {
     EntityManager.init(scene);
     CameraControls.init(camera);
     ContextMenu.init();
+    
+    // Initialize FactionAI for non-player factions
+    FactionAI.init();
 
     // Create initial entities for demonstration
     EntityManager.createInitialEntities();
@@ -117,32 +125,6 @@ function setupEventHandlers() {
                 ContextMenu.showEmptyGridMenu(event.clientX, event.clientY, gridCoords.x, gridCoords.y);
             }
         }
-    });
-
-    // Left-click for selecting destination when moving ships
-    document.addEventListener('click', (event) => {
-        // Only process if waiting for move target
-        // if (!EntityManager.waitingForMoveTarget) return;
-
-        // // Get mouse position and raycaster
-        // const mouse = {
-        //     x: (event.clientX / window.innerWidth) * 2 - 1,
-        //     y: -(event.clientY / window.innerHeight) * 2 + 1
-        // };
-
-        // const raycaster = new THREE.Raycaster();
-        // raycaster.setFromCamera(mouse, camera);
-
-        // Check for grid plane intersection
-        // const gridIntersects = raycaster.intersectObjects([grid.children[1]], true);
-
-        // if (gridIntersects.length > 0) {
-        //     const gridCoords = GridManager.getGridCoords(gridIntersects[0]);
-        //     console.log('gridCoords: ', gridCoords);
-        //     if (gridCoords) {
-        //         EntityManager.handleMoveTargetSelection(gridCoords.x, gridCoords.y);
-        //     }
-        // }
     });
 
     // Add ESC key handler for canceling move target selection

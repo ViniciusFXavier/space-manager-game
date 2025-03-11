@@ -6,6 +6,8 @@ export const ContextMenu = {
     menu: null,
     menuOptions: null,
     targetEntity: null,
+    stationCooldowns: {}, // Track cooldowns for player station ship creation
+    shipCreationCooldown: 2 * 60 * 1000, // 2 minutes
 
     // Initialize context menu
     init: function () {
@@ -44,7 +46,7 @@ export const ContextMenu = {
 
         // Add option to create a new ship
         const createShipOption = document.createElement('li');
-        createShipOption.textContent = 'Create Ship';
+        createShipOption.textContent = 'Test Create Ship';
         createShipOption.addEventListener('click', () => {
             EntityManager.createShip(gridX, gridY, FactionManager.playerFaction);
             this.hideMenu();
@@ -91,6 +93,57 @@ export const ContextMenu = {
         infoOption.style.fontWeight = 'bold';
         infoOption.style.color = '#' + station.faction.color.toString(16).padStart(6, '0');
         this.menuOptions.appendChild(infoOption);
+
+        // If station belongs to player faction, add "Create Ship" option
+        if (FactionManager.isPlayerFaction(station.faction)) {
+            const now = Date.now();
+            const lastCreation = this.stationCooldowns[station.id] || 0;
+            const cooldownRemaining = this.shipCreationCooldown - (now - lastCreation);
+
+            const createShipOption = document.createElement('li');
+
+            if (cooldownRemaining <= 0) {
+                createShipOption.textContent = 'Create Ship';
+                createShipOption.addEventListener('click', () => {
+                    // Find a free position near the station
+                    const freePos = EntityManager.findFreePositionNear(
+                        station.gridPosition.x,
+                        station.gridPosition.y
+                    );
+
+                    // Create a new ship at that position
+                    EntityManager.createShip(freePos.x, freePos.y, station.faction);
+
+                    // Update cooldown
+                    this.stationCooldowns[station.id] = now;
+
+                    this.hideMenu();
+                });
+            } else {
+                // Display cooldown remaining
+                const secondsRemaining = Math.ceil(cooldownRemaining / 1000);
+                const minutesRemaining = Math.floor(secondsRemaining / 60);
+                const remainingSeconds = secondsRemaining % 60;
+
+                createShipOption.textContent = `Create Ship (Cooldown: ${minutesRemaining}m ${remainingSeconds}s)`;
+                createShipOption.style.opacity = '0.5';
+                createShipOption.style.cursor = 'default';
+            }
+
+            this.menuOptions.appendChild(createShipOption);
+        }
+
+        // If station belongs to player faction, add "Ai Manager" option
+        if (FactionManager.isPlayerFaction(station.faction)) {
+            const aiManagerOption = document.createElement('li');
+            const managerAiEnabled = FactionManager.playerFaction.factionAi
+            aiManagerOption.textContent = (managerAiEnabled ? 'Disable' : 'Enable') + ' Ai Manager';
+            aiManagerOption.addEventListener('click', () => {
+                FactionManager.playerFaction.factionAi = !managerAiEnabled;
+                this.hideMenu();
+            })
+            this.menuOptions.appendChild(aiManagerOption);
+        }
 
         this.showMenu(x, y);
     },
