@@ -2,7 +2,7 @@
 
 A Space Manager strategy game with faction management, inspired by X4 Foundations, built with Three.js.
 
-![Space Manager Game Screenshot](https://github.com/user-attachments/assets/3e26503b-0b36-45d3-b3f4-3f54b1ea9dc1)
+![Space Manager Game Screenshot](https://github.com/user-attachments/assets/ed3264a9-927b-4437-bb8c-4cefc1a25ebd)
 
 ## Overview
 
